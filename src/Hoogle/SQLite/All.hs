@@ -148,7 +148,7 @@ createSQLiteStatements db =
          , "    , entryPriority"
          , "    )"
          , "VALUES"
-         , "    ( ?1, ?2, ?3, ?4, 5, ?6, ?7, ?8, ?9 );"
+         , "    ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9 );"
          ])
     <*> (SQLite.prepare db
          "INSERT OR REPLACE INTO Location (LocationUrl) VALUES (?1);")
