@@ -10,7 +10,11 @@ module Hoogle.Type.TagStr(
 
 import General.Base
 import General.Web
+import Control.Applicative
 import Data.Generics.Uniplate
+import qualified Data.Serialize as S
+import Foreign.Ptr
+import Foreign.Storable
 import Hoogle.Store.All
 
 
@@ -56,6 +60,23 @@ instance Store TagStr where
                 4 -> get2 TagLink
                 5 -> get2 TagColor
 
+instance S.Serialize TagStr where
+    put (Str x)        = S.putWord8 0 >> S.put x
+    put (Tags x)       = S.putWord8 1 >> S.put x
+    put (TagBold x)    = S.putWord8 2 >> S.put x
+    put (TagEmph x)    = S.putWord8 3 >> S.put x
+    put (TagLink x y)  = S.putWord8 4 >> S.put x >> S.put y
+    put (TagColor x y) = S.putWord8 5 >> S.put x >> S.put y
+
+    get = do
+        i <- S.getWord8
+        case i of
+            0 -> Str <$> S.get
+            1 -> Tags <$> S.get
+            2 -> TagBold <$> S.get
+            3 -> TagEmph <$> S.get
+            4 -> TagLink <$> S.get <*> S.get
+            5 -> TagColor <$> S.get <*> S.get
 
 -- | Smart constructor for 'Tags'
 tags :: [TagStr] -> TagStr

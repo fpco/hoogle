@@ -41,6 +41,9 @@ library
         parsec >= 2.1,
         transformers >= 0.2,
         uniplate >= 1.6,
+        direct-sqlite >= 2.3.3,
+        cereal >= 0.3.5,
+        text >= 0.9,
         haskell-src-exts >= 1.12 && < 1.14
 
     if !os(mingw32)
@@ -53,6 +56,7 @@ library
     -- http://hackage.haskell.org/trac/hackage/ticket/776
     other-modules:
         Hoogle.DataBase.All
+        Hoogle.SQLite.All
         Hoogle.Type.All
         Hoogle.Query.All
         Hoogle.Score.All
@@ -80,6 +84,7 @@ library
         Hoogle.DataBase.TypeSearch.Result
         Hoogle.DataBase.TypeSearch.TypeScore
         Hoogle.DataBase.TypeSearch.All
+        Hoogle.SQLite.Type
         Hoogle.Type.Docs
         Hoogle.Type.Item
         Hoogle.Type.Language

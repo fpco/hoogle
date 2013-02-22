@@ -21,9 +21,11 @@ module Hoogle(
 import Hoogle.Store.All
 import General.Base
 import General.System
+import System.IO.Unsafe (unsafePerformIO)
 
 import Hoogle.Type.TagStr
 import qualified Hoogle.DataBase.All as H
+import qualified Hoogle.SQLite.All as H
 import qualified Hoogle.Query.All as H
 import qualified Hoogle.Score.All as H
 import qualified Hoogle.Search.All as H
@@ -78,7 +80,9 @@ createDatabase
     -> [Database] -- ^ A list of databases which contain definitions this input definition relies upon (e.g. types, aliases, instances).
     -> String -- ^ The input definitions, usually with one definition per line, in a format specified by the 'Language'.
     -> ([H.ParseError], Database) -- ^ A pair containing any parse errors present in the input definition, and the database ignoring any parse errors.
-createDatabase _ dbs src = (err, fromDataBase $ H.createDataBase xs res)
+createDatabase _ dbs src = unsafePerformIO $ do
+    H.createSQLiteDataBase [] "sample.hdb" res
+    return (err, fromDataBase $ H.createDataBase xs res)
     where
         (err,res) = H.parseInputHaskell src
         xs = concat [x | Database x <- dbs]

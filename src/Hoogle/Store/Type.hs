@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables, DeriveDataTypeable #-}
 
 module Hoogle.Store.Type(
-    Once, once, fromOnce, putOnce, getOnce,
+    Once, once, fromOnce, onceKey, putOnce, getOnce,
     SPut, runSPut, putByteString, putStorable, putDefer,
     SGet, runSGet, getByteString, getStorable, getDefer, getLazyList
     ) where
@@ -31,6 +31,9 @@ data Once a = Once {_onceKey :: Int, valueOnce :: a}
 
 fromOnce :: Once a -> a
 fromOnce = valueOnce
+
+onceKey :: Once a -> Int
+onceKey = _onceKey
 
 -- | Given how many you would like to allocate, return your base address
 onceKeys :: Int -> IO Int

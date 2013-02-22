@@ -4,6 +4,8 @@ module Hoogle.Type.Docs(
     ) where
 
 import General.Base
+import Control.Applicative
+import qualified Data.Serialize as S
 import Hoogle.Type.TagStr
 import Hoogle.Store.All
 import Data.ByteString.Char8(ByteString,pack,unpack)
@@ -17,6 +19,9 @@ instance Store Docs where
     put (Docs x) = put1 x
     get = get1 Docs
 
+instance S.Serialize Docs where
+    put (Docs x) = S.put x
+    get = Docs <$> S.get
 
 readDocsHTML :: String -> Docs
 readDocsHTML = Docs . pack
