@@ -44,16 +44,15 @@ createSQLiteSchema db = do
         , "CREATE TABLE"
         , "    Entry"
         , "    ("
-        , "        entryId        INTEGER NOT NULL,"
-        , "        entryPackageId INTEGER NOT NULL,"
-        , "        entryModuleId  INTEGER NOT NULL,"
-        , "        entryName      TEXT NOT NULL,"
-        , "        entryFullName  TEXT NOT NULL,"
-        , "        entryType      INTEGER,"
-        , "        entryText      NONE NOT NULL,"
-        , "        entryDocs      NONE NOT NULL,"
-        , "        entryUrl       TEXT,"
-        , "        entryPriority  INTEGER NOT NULL"
+        , "        entryId       INTEGER NOT NULL,"
+        , "        entryLevel    INTEGER NOT NULL,"
+        , "        entryKey      TEXT NOT NULL,"
+        , "        entryName     TEXT NOT NULL,"
+        , "        entryType     NONE NOT NULL,"
+        , "        entryText     NONE NOT NULL,"
+        , "        entryDocs     NONE NOT NULL,"
+        , "        entryUrl      TEXT,"
+        , "        entryPriority INTEGER NOT NULL"
         , "    );"
         , ""
         , "CREATE TABLE"
@@ -139,10 +138,9 @@ createSQLiteStatements db =
     <$> (SQLite.prepare db $ T.unwords
          [ "INSERT INTO Entry"
          , "    ( entryId"
-         , "    , entryPackageId"
-         , "    , entryModuleId"
+         , "    , entryLevel"
+         , "    , entryKey"
          , "    , entryName"
-         , "    , entryFullName"
          , "    , entryType"
          , "    , entryText"
          , "    , entryDocs"
@@ -150,7 +148,7 @@ createSQLiteStatements db =
          , "    , entryPriority"
          , "    )"
          , "VALUES"
-         , "    ( ?1, ?2, ?3, ?4, 5, ?6, ?7, ?8, ?9, ?10 );"
+         , "    ( ?1, ?2, ?3, ?4, 5, ?6, ?7, ?8, ?9 );"
          ])
     <*> (SQLite.prepare db
          "INSERT OR REPLACE INTO Location (LocationUrl) VALUES (?1);")
@@ -172,31 +170,23 @@ createSQLiteItems db xs = do
     SQLite.exec db "COMMIT;"
 
 bindAndRun :: SQLite.Statement -> [SQLite.SQLData] -> IO ()
-bindAndRun stmt xs = do
+bindAndRun stmt xs =  do
     SQLite.bind stmt xs
     SQLite.step stmt
     SQLite.reset stmt
     SQLite.clearBindings stmt
 
-withObject :: Storable a => a -> (ByteString -> IO ()) -> IO ()
-withObject x f = allocaBytes len $ \ptr -> do
-    poke ptr x
-    unsafePackCStringFinalizer (castPtr ptr) len (return ()) >>= f
-  where
-    len = sizeOf x
-
 createSQLiteItem :: SQLite.Statement -> Once Entry -> IO ()
 createSQLiteItem insertStmt x = do
     let x' = fromOnce x
     bindAndRun insertStmt
-        [ SQLite.SQLInteger (fromIntegral (onceKey x))
-        , SQLite.SQLInteger 1
-        , SQLite.SQLInteger 1
-        , SQLite.SQLText (T.pack (entryKey x'))
-        , SQLite.SQLText (T.pack (entryName x'))
-        , SQLite.SQLNull
-        , SQLite.SQLBlob (encode (entryText x'))
-        , SQLite.SQLBlob (encode (entryDocs x'))
-        , SQLite.SQLNull
-        , SQLite.SQLInteger (fromIntegral (entryPriority x'))
+        [ SQLite.SQLInteger (fromIntegral (onceKey x))        -- entryId
+        , SQLite.SQLInteger (fromIntegral (entryLevel x'))    -- entryLevel
+        , SQLite.SQLText (T.pack (entryKey x'))               -- entryKey
+        , SQLite.SQLText (T.pack (entryName x'))              -- entryName
+        , SQLite.SQLBlob (encode (entryType x'))              -- entryType
+        , SQLite.SQLBlob (encode (entryText x'))              -- entryText
+        , SQLite.SQLBlob (encode (entryDocs x'))              -- entryDocs
+        , SQLite.SQLNull                                      -- entryUrl
+        , SQLite.SQLInteger (fromIntegral (entryPriority x')) -- entryPriority
         ]

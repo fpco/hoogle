@@ -3,9 +3,11 @@
 module Hoogle.Type.TypeSig where
 
 import Hoogle.Store.All
+import Control.Applicative
 import Data.List
 import Data.Data
 import Data.Generics.UniplateOn
+import qualified Data.Serialize as S
 
 
 ---------------------------------------------------------------------
@@ -106,6 +108,10 @@ instance Store TypeSig where
     put (TypeSig a b) = put2 a b
     get = get2 TypeSig
 
+instance S.Serialize TypeSig where
+    put (TypeSig a b) = S.put a >> S.put b
+    get = TypeSig <$> S.get <*> S.get
+
 instance Store Type where
     put (TApp a b) = putByte 0 >> put2 a b
     put (TLit a)   = putByte 1 >> put1 a
@@ -119,6 +125,21 @@ instance Store Type where
             1 -> get1 TLit
             2 -> get1 TVar
             3 -> get1 TFun
+
+instance S.Serialize Type where
+    put (TApp a b) = S.putWord8 0 >> S.put a >> S.put b
+    put (TLit a)   = S.putWord8 1 >> S.put a
+    put (TVar a)   = S.putWord8 2 >> S.put a
+    put (TFun a)   = S.putWord8 3 >> S.put a
+
+    get = do
+        i <- S.getWord8
+        case i of
+            0 -> TApp <$> S.get <*> S.get
+            1 -> TLit <$> S.get
+            2 -> TVar <$> S.get
+            3 -> TFun <$> S.get
+            _ -> TFun <$> S.get
 
 
 ---------------------------------------------------------------------

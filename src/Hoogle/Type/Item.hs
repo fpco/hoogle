@@ -38,12 +38,13 @@ data Fact
 -- Invariant: locations will not be empty
 data Entry = Entry
     {entryLocations :: [(URL, [Once Entry])]
-    ,entryName :: String
-    ,entryText :: TagStr
-    ,entryDocs :: Docs
-    ,entryPriority :: Int
-    ,entryKey :: String -- used only for rebuilding combined databases
-    ,entryType :: Maybe TypeSig -- used only for rebuilding combined databases
+    ,entryLevel     :: Int -- 0 for package, 1 for module, 2 for entry
+    ,entryName      :: String
+    ,entryText      :: TagStr
+    ,entryDocs      :: Docs
+    ,entryPriority  :: Int
+    ,entryKey       :: String -- used only for rebuilding combined databases
+    ,entryType      :: Maybe TypeSig -- used only for rebuilding combined databases
     }
     deriving Typeable
 
@@ -53,8 +54,8 @@ entryUnique Entry{..} = (entryName, entryText, entryDocs, entryKey, entryType)
 
 
 -- | Join two entries that are equal under entryUnique
-entryJoin e1 e2 = e1
-    {entryPriority = min (entryPriority e1) (entryPriority e2)
+entryJoin e1 e2     = e1
+    {entryPriority  = min (entryPriority e1) (entryPriority e2)
     ,entryLocations = nubOn (map (entryName . fromOnce) . snd) $ concatMap entryLocations $
         if entryScore e1 < entryScore e2 then [e1,e2] else [e2,e1]}
 
@@ -70,18 +71,18 @@ data EntryView = FocusOn String -- characters in the range should be focused
 renderEntryText :: [EntryView] -> TagStr -> TagStr
 renderEntryText view = transform f
     where
-        cols = [(b+1,a+1) | ArgPosNum a b <- view]
-        strs = [map toLower x | FocusOn x <- view]
+        cols         = [(b+1,a+1) | ArgPosNum a b <- view]
+        strs         = [map toLower x | FocusOn x <- view]
 
-        f (TagColor i x) = maybe x (`TagColor` x) $ lookup i $ [(0,0)|cols/=[]] ++ cols
+        f (TagColor i x)     = maybe x (`TagColor` x) $ lookup i $ [(0,0)|cols/=[]] ++ cols
         f (TagBold (Str xs)) = TagBold $ Tags $ g xs
-        f x = x
+        f x                  = x
 
-        g xs | ss /= [] = TagEmph (Str a) : g b
-            where ss = filter (`isPrefixOf` map toLower xs) strs
+        g xs | ss /= []  = TagEmph (Str a) : g b
+            where ss    = filter (`isPrefixOf` map toLower xs) strs
                   (a,b) = splitAt (maximum $ map length ss) xs
-        g (x:xs) = Str [x] : g xs
-        g [] = []
+        g (x:xs)        = Str [x] : g xs
+        g []            = []
 
 
 -- TODO: EntryScore is over-prescriptive, and not overly useful
@@ -101,5 +102,5 @@ instance Show Entry where
     show = showTagText . entryText
 
 instance Store Entry where
-    put (Entry a b c d e f g) = put7 a b c d e f g
-    get = get7 Entry
+    put (Entry a b c d e f g h) = put8 a b c d e f g h
+    get = get8 Entry
