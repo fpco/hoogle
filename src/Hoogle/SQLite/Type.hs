@@ -5,5 +5,5 @@ import Hoogle.Type.All
 import General.Base
 
 data SQLiteDataBase = SQLiteDataBase
-    {sqlItems :: Int
+    { sqlItems :: Int
     }

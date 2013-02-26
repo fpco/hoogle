@@ -164,9 +164,8 @@ createSQLiteItems db xs = do
     bracket
         (createSQLiteStatements db)
         finalizeSQLiteStatements
-        (\stmts -> do
-              forM_ (entriesItems (createItems xs))
-                    (createSQLiteItem (entryInsertStmt stmts)))
+        (\stmts -> forM_ (entriesItems (createItems xs))
+                        (createSQLiteItem (entryInsertStmt stmts)))
     SQLite.exec db "COMMIT;"
 
 bindAndRun :: SQLite.Statement -> [SQLite.SQLData] -> IO ()
