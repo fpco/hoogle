@@ -15,7 +15,7 @@ module Hoogle(
     -- * Score
     Score, H.scoring,
     -- * Search
-    Result(..), search, suggestions, completions
+    Result(..), search, suggestions, completions, queryExact, H.ItemKind(..)
     ) where
 
 import Hoogle.Store.All
@@ -32,7 +32,7 @@ import qualified Hoogle.Search.All as H
 import qualified Hoogle.Type.All as H
 import qualified Hoogle.Language.Haskell as H
 
-import Hoogle.Query.All(Query)
+import Hoogle.Query.All(Query, exactSearch)
 import Hoogle.Score.All(Score)
 
 
@@ -131,3 +131,7 @@ suggestions (Database dbs) q = H.suggestQuery dbs q
 -- | Given a query string and a database return a list of the possible completions for the search.
 completions :: Database -> String -> [String]
 completions x = H.completions (toDataBase x)
+
+-- | Given a query, set whether it is an exact query.
+queryExact :: Maybe H.ItemKind -> Query -> Query
+queryExact kind q = q { exactSearch = kind }
