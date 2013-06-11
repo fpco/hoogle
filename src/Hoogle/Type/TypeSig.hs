@@ -6,6 +6,7 @@ import Hoogle.Store.All
 import Data.List
 import Data.Data
 import Data.Generics.UniplateOn
+import Debug.Trace
 
 
 ---------------------------------------------------------------------
@@ -119,6 +120,7 @@ instance Store Type where
             1 -> get1 TLit
             2 -> get1 TVar
             3 -> get1 TFun
+            _ -> trace ("Something is serious wrong, Hoogle.Type.TypeSig received: " ++ show i) $ get1 TFun
 
 
 ---------------------------------------------------------------------

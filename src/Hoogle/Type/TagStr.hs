@@ -12,6 +12,7 @@ import General.Base
 import General.Web
 import Data.Generics.Uniplate
 import Hoogle.Store.All
+import Debug.Trace
 
 
 data TagStr
@@ -55,6 +56,7 @@ instance Store TagStr where
                 3 -> get1 TagEmph
                 4 -> get2 TagLink
                 5 -> get2 TagColor
+                _ -> trace ("Something is serious wrong, Hoogle.Type.TagStr received: " ++ show i) $ get1 Str
 
 
 -- | Smart constructor for 'Tags'
