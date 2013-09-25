@@ -1,6 +1,5 @@
 Changelog for Hoogle
 
-    Remove lots of explicit upper bounds
 4.2.15
     Allow http-types-0.8
     Allow case-insensitive-1.0
