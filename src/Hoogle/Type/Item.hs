@@ -11,6 +11,8 @@ import Hoogle.Type.TypeSig
 import Data.Generics.Uniplate
 
 
+type HackageURL = String
+
 type Input = ([Fact], [TextItem])
 
 data ItemKind = PackageItem
@@ -23,6 +25,9 @@ data ItemKind = PackageItem
               | InstanceItem
               | UnclassifiedItem
               deriving (Data,Typeable,Show,Eq,Enum)
+
+instance NFData ItemKind where
+    rnf = rnf . fromEnum
 
 data TextItem = TextItem
     {itemLevel :: Int -- 0 = package, 1 = module, >2 = entry
@@ -59,6 +64,10 @@ data Entry = Entry
     ,entryType :: Maybe TypeSig -- used only for rebuilding combined databases
     }
     deriving (Eq, Typeable)
+
+instance NFData Entry where
+    rnf ent@(Entry a b c d e f g h i) = rnf (map (second $ map (f . fromOnce)) a,b,c,d,e,f,g,h,i)
+        where f ent2 = if entryUnique ent == entryUnique ent2 then () else rnf ent2
 
 
 -- | Figure out what makes this entry different from others

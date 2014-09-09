@@ -11,7 +11,7 @@ import Hoogle.Type.All hiding (Result)
 
 import Hoogle.Store.All
 import qualified Data.IntMap as IntMap
-import qualified Data.Heap as Heap
+import qualified General.Heap as Heap
 import General.Base
 import General.Util
 import Control.Monad.Trans.State
@@ -23,6 +23,9 @@ data Graphs = Graphs
     {argGraph :: Graph -- the arguments
     ,resGraph :: Graph -- the results
     }
+
+instance NFData Graphs where
+    rnf (Graphs a b) = rnf (a,b)
 
 instance Show Graphs where
     show (Graphs a b) = "== Arguments ==\n\n" ++ show a ++

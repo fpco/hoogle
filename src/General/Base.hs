@@ -4,7 +4,9 @@
 --   have been in base, or could plausibly be added.
 module General.Base(module General.Base, module X) where
 
+import Control.Applicative as X ((<*>),(<$>))
 import Control.Arrow as X
+import Control.DeepSeq as X
 import Control.Monad as X
 import Data.Char as X
 import Data.Data as X (Data,Typeable)
@@ -19,7 +21,6 @@ import Data.Int as X
 import Data.Word as X
 import Debug.Trace as X (trace)
 import Numeric as X (readHex,showHex)
-import System.FilePath as X hiding (combine)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
@@ -104,6 +105,23 @@ readFileUtf8 x = readFile x
 readFileUtf8 x = do
     h <- openFile x ReadMode
     hSetEncoding h utf8
+    hGetContents h
+#endif
+
+
+readFileLatin1' :: FilePath -> IO String
+readFileLatin1' x = do
+    src <- readFileLatin1 x
+    length src `seq` return src
+
+
+readFileLatin1 :: FilePath -> IO String
+#if __GLASGOW_HASKELL__ < 612
+readFileLatin1 x = readFile x
+#else
+readFileLatin1 x = do
+    h <- openFile x ReadMode
+    hSetEncoding h latin1
     hGetContents h
 #endif
 

@@ -1,4 +1,7 @@
+.cabal-sandbox
+cabal.sandbox.config
 /.hpc/
 /dist/
 /datadir/databases/
 Thumbs.db
+.hub

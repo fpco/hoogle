@@ -13,8 +13,13 @@ module General.Web(
     Args, cgiArgs, cgiResponse, parseHttpQueryArgs
     ) where
 
+#ifndef MIN_VERSION_wai
+#define MIN_VERSION_wai(a,b,c) 0
+#endif
+
 import General.System
 import General.Base
+import System.FilePath
 import Network.Wai
 #if MIN_VERSION_wai(3, 0, 0)
 import Data.IORef
@@ -28,8 +33,10 @@ import qualified Data.ByteString.Lazy.Char8 as LBS
 
 import Blaze.ByteString.Builder(toLazyByteString)
 import Data.Conduit.List(consume)
-import Data.Conduit(($$),Flush,Flush(Chunk))
+import Data.Conduit(($$),Flush(Chunk))
+#if !MIN_VERSION_wai(2, 0, 0)
 import Control.Monad.Trans.Resource (runResourceT)
+#endif
 
 type Args = [(String, String)]
 

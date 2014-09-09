@@ -68,6 +68,8 @@ data SubstrSearch a = SubstrSearch
     }
     deriving Typeable
 
+instance NFData a => NFData (SubstrSearch a) where
+    rnf (SubstrSearch a b c) = rnf (a `seq` (),b `seq` (),c)
 
 -- | Create a substring search index. Values are returned in order where possible.
 createSubstrSearch :: [(String,a)] -> SubstrSearch a
@@ -166,8 +168,7 @@ instance (Typeable a, Store a) => Store (SubstrSearch a) where
 bsMatch :: BS.ByteString -> Int -> BS.ByteString -> Maybe TextMatch
 bsMatch x
     | nx == 0 = \ny _ -> Just $ if ny == 0 then MatchExact else MatchPrefix
-    | nx == 1 = let c = BS.head x
-                in \ny y ->
+    | nx == 1 = \ny y ->
                 maybe (bsCharMatch MatchExactCI MatchPrefixCI False
                            (BS.head (bsLower x)) ny (bsLower y))
                     Just (bsCharMatch MatchExact MatchPrefix True

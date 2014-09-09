@@ -14,6 +14,9 @@ import Safe
 
 newtype Aliases = Aliases {fromAliases :: Map.Map String Alias}
 
+instance NFData Aliases where
+    rnf (Aliases a) = rnf a
+
 instance Store Aliases where
     put = put . fromAliases
     get = get1 Aliases
@@ -28,6 +31,9 @@ data Alias = Alias
     ,rhs :: Type -- the resulting type
     }
     deriving Typeable
+
+instance NFData Alias where
+    rnf (Alias a b) = rnf (a,b)
 
 instance Store Alias where
     put (Alias a b) = put2 a b
@@ -89,7 +95,10 @@ followAlias _ _ = Nothing
 normAliases :: Aliases -> Type -> ([String], Type)
 normAliases as t = first (sort . nub) $ f t
     where
-        f t = case followAlias as t of
-                  Just (s,t) -> ([s],t)
-                  Nothing -> (concat *** gen) $ unzip $ map f cs
-            where (cs, gen) = uniplate t
+        f t = case followAlias as t2 of
+                   Nothing -> (concat ss, t2)
+                   Just (s,t2) -> (s : concat ss, t2)
+            where
+                (cs, gen) = uniplate t
+                (ss, css) = unzip $ map f cs
+                t2 = gen css

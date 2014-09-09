@@ -4,6 +4,7 @@ module Hoogle.Language.Haskell(parseInputHaskell) where
 
 import General.Base
 import General.Util
+import System.FilePath
 import Hoogle.Type.All
 import Language.Haskell.Exts.Annotated hiding (TypeSig,Type)
 import qualified Language.Haskell.Exts.Annotated as HSE
@@ -13,8 +14,8 @@ import Data.Generics.Uniplate.Data
 type S = SrcSpanInfo
 
 
-parseInputHaskell :: String -> ([ParseError], Input)
-parseInputHaskell = join . f [] "" . zip [1..] . lines
+parseInputHaskell :: HackageURL -> String -> ([ParseError], Input)
+parseInputHaskell hackage = join . f [] "" . zip [1..] . lines
     where
         f com url [] = []
         f com url ((i,s):is)
@@ -22,7 +23,7 @@ parseInputHaskell = join . f [] "" . zip [1..] . lines
             | "--" `isPrefixOf` s = f ([dropWhile isSpace $ drop 2 s | com /= []] ++ com) url is
             | "@url " `isPrefixOf` s =  f com (drop 5 s) is
             | all isSpace s = f [] "" is
-            | otherwise = (case parseLine i s of
+            | otherwise = (case parseLine hackage i s of
                                Left y -> Left y
                                Right (as,bs) -> Right (as,[b{itemURL=if null url then itemURL b else url, itemDocs=unlines $ reverse com} | b <- bs]))
                           : f [] "" is
@@ -32,15 +33,15 @@ parseInputHaskell = join . f [] "" . zip [1..] . lines
                   (as,bs) = unzip items
 
 
-parseLine :: Int -> String -> Either ParseError ([Fact],[TextItem])
-parseLine line x | "(##)" `isPrefixOf` x = Left $ parseErrorWith line 1 "Skipping due to HSE bug #206" "(##)"
-parseLine line ('@':str) = case a of
+parseLine :: HackageURL -> Int -> String -> Either ParseError ([Fact],[TextItem])
+parseLine _ line x | "(##)" `isPrefixOf` x = Left $ parseErrorWith line 1 "Skipping due to HSE bug #206" "(##)"
+parseLine url line ('@':str) = case a of
         "entry" | b <- words b, b /= [] -> Right $ itemEntry b
-        "package" | [b] <- words b, b /= "" -> Right $ itemPackage b
+        "package" | [b] <- words b, b /= "" -> Right $ itemPackage url b
         _ -> Left $ parseErrorWith line 2 ("Unknown attribute: " ++ a) $ '@':str
     where (a,b) = break isSpace str
-parseLine line x | ["module",a] <- words x = Right $ itemModule $ split '.' a
-parseLine line x
+parseLine _ line x | ["module",a] <- words x = Right $ itemModule $ split '.' a
+parseLine _ line x
     | not continue = res
     | otherwise = fromMaybe res $ fmap Right $ parseTuple x `mappend` parseCtor x
     where (continue,res) = parseFunction line x
@@ -76,9 +77,9 @@ textItem = TextItem 2 UnclassifiedItem "" "" Nothing (Str "") "" "" 0
 
 fact x y = (x,[y])
 
-itemPackage x = fact [] $ textItem{itemLevel=0, itemKey="", itemName=x,
+itemPackage hackageUrl x = fact [] $ textItem{itemLevel=0, itemKey="", itemName=x,
     itemKind=PackageItem,
-    itemURL="http://hackage.haskell.org/package/" ++ x ++ "/",
+    itemURL= hackageUrl ++ "package/" ++ x ++ "/",
     itemDisp=Tags [emph "package",space,bold x]}
 
 itemEntry (x:xs) = fact [] $ textItem{itemName=y, itemKey=y,
@@ -137,6 +138,8 @@ transDecl x (HSE.TypeSig _ [name] tyy) = Just $ fact (ctr++kinds False typ) $ te
           ctorStart x = isUpper x || x `elem` ":("
           kind | ctorStart $ head nam = DataCtorItem
                | otherwise = FunctionItem
+transDecl x (HSE.TypeSig o names tyy) = fmap f $ sequence [transDecl x $ HSE.TypeSig o [name] tyy | name <- names]
+    where f xs = (concatMap fst xs, concatMap snd xs)
 
 transDecl x (ClassDecl s ctxt hd _ _) = Just $ fact (kinds True $ transDeclHead ctxt hd) $ textItem
     {itemName=nam, itemKey=nam, itemKind=ClassItem

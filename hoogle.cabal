@@ -1,21 +1,25 @@
 cabal-version:      >= 1.10
 build-type:         Simple
 name:               hoogle
-version:            4.2.15
+version:            4.2.34
 license:            BSD3
 license-file:       docs/LICENSE
 category:           Development
 author:             Neil Mitchell <ndmitchell@gmail.com>
 maintainer:         Neil Mitchell <ndmitchell@gmail.com>
-copyright:          Neil Mitchell 2004-2013
+copyright:          Neil Mitchell 2004-2014
 synopsis:           Haskell API Search
 description:
     Hoogle is a Haskell API search engine, which allows you to
     search many standard Haskell libraries by either function name,
     or by approximate type signature.
 homepage:           http://www.haskell.org/hoogle/
-stability:          Beta
-extra-source-files: README.txt
+bug-reports:        https://github.com/ndmitchell/hoogle/issues
+tested-with:        GHC==7.8.2, GHC==7.6.3, GHC==7.4.2
+extra-source-files:
+    README.md
+    CHANGES.txt
+    datadir/*.txt
 
 data-dir: datadir
 data-files:
@@ -28,8 +32,8 @@ data-files:
     resources/search.xml
 
 source-repository head
-    type:     darcs
-    location: http://code.haskell.org/hoogle/
+    type:     git
+    location: https://github.com/ndmitchell/hoogle.git
 
 library
     hs-source-dirs: src
@@ -37,19 +41,25 @@ library
 
     build-depends:
         base > 4 && < 5,
-        array, bytestring, containers, directory, filepath, process, random,
+        array, containers, directory, filepath, process, random,
         safe,
         binary,
+        bytestring >= 0.9,
         conduit >= 0.2,
         resourcet,
         parsec >= 2.1,
+        deepseq >= 1.1,
+        text >= 0.11,
         transformers >= 0.2,
         uniplate >= 1.6,
         blaze-builder >= 0.2,
         case-insensitive >= 0.2,
         http-types >= 0.7,
         wai >= 1.1,
-        haskell-src-exts >= 1.14 && < 1.15
+        vector >= 0.9,
+        vector-algorithms >= 0.6,
+        QuickCheck,
+        haskell-src-exts >= 1.14 && < 1.16
 
     if !os(mingw32)
         build-depends: unix
@@ -68,10 +78,12 @@ library
         Hoogle.Language.Haskell
 
     other-modules:
-        Data.Heap
-        Data.TypeMap
+        General.Heap
+        General.TypeMap
         General.Base
         General.System
+        General.BurrowsWheeler
+        General.FMIndex
         General.Util
         General.Web
         Hoogle.DataBase.Aliases
@@ -88,6 +100,8 @@ library
         Hoogle.DataBase.TypeSearch.Result
         Hoogle.DataBase.TypeSearch.TypeScore
         Hoogle.DataBase.TypeSearch.All
+        Hoogle.DataBase2.Str
+        Hoogle.DataBase2.Type
         Hoogle.Type.Docs
         Hoogle.Type.Item
         Hoogle.Type.Language
@@ -115,14 +129,20 @@ executable hoogle
 
     build-depends:
         base > 4 && < 5,
-        hoogle, bytestring, filepath, unix, directory, process, random,
-        array, containers, time, old-time, old-locale,
+        bytestring, filepath, directory, process, random,
+        array, containers, time, old-locale,
         safe,
+        binary,
+        aeson >= 0.6.1,
         cmdargs >= 0.7,
+        deepseq >= 1.1,
         tagsoup >= 0.11,
         blaze-builder >= 0.2,
         http-types >= 0.7,
         case-insensitive >= 0.2,
+        text >= 0.11,
+        vector >= 0.9,
+        vector-algorithms >= 0.6,
         transformers >= 0.2,
         uniplate >= 1.6,
         conduit >= 0.2,
@@ -131,7 +151,12 @@ executable hoogle
         wai >= 1.1,
         warp >= 1.1,
         Cabal >= 1.8,
-        haskell-src-exts >= 1.14 && < 1.15
+        shake >= 0.11,
+        QuickCheck,
+        haskell-src-exts >= 1.14 && < 1.16
+
+    if !os(mingw32)
+        build-depends: unix
 
     other-modules:
         CmdLine.All
@@ -145,13 +170,12 @@ executable hoogle
         Paths_hoogle
         Recipe.All
         Recipe.Cabal
-        Recipe.Download
-        Recipe.General
+        Recipe.Command
         Recipe.Hackage
         Recipe.Haddock
         Recipe.Keyword
-        Recipe.Type
         Test.All
+        Test.BWT_FM
         Test.Docs
         Test.General
         Test.Parse_Query
@@ -163,17 +187,9 @@ executable hoogle
         Web.Template
 
 test-suite hoogle-test
-    main-is: HoogleSpec.hs
-    hs-source-dirs: test
+    main-is: Test.hs
+    hs-source-dirs: src
     default-language: Haskell98
 
     type: exitcode-stdio-1.0
-    build-depends:
-        base >=3,
-        hoogle,
-        conduit >= 0.2,
-        system-fileio >= 0.3.11,
-        transformers >= 0.2,
-        HUnit >= 1.2.5,
-        hspec >= 1.4.4,
-        hspec-expectations >= 0.3
+    build-depends: base >= 3, process, directory, filepath, temporary >= 1.1

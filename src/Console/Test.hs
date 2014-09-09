@@ -7,6 +7,7 @@ module Console.Test(testPrepare, testFile) where
 import Hoogle
 import General.Base
 import General.System
+import System.FilePath
 import Paths_hoogle
 import CmdLine.All
 import Test.All
@@ -22,13 +23,14 @@ testPrepare = do
     putStrLn "Converting testdata"
     performGC -- clean up the databases
     dat <- getDataDir
+    createDirectoryIfMissing True $ dat </> "databases"
     src <- readFileUtf8 $ dat </> "testdata.txt"
-    let (errs, dbOld) = createDatabase Haskell [] src
-    unless (null errs) $ error $ unlines $ "Couldn't convert testdata database:" : map show errs
     let dbfile = dat </> "databases/testdata.hoo"
-    saveDatabase dbfile dbOld
+    errs <- createDatabase "http://hackage.haskell.org/" Haskell [] src dbfile
+    unless (null errs) $ error $ unlines $ "Couldn't convert testdata database:" : map show errs
     db <- loadDatabase dbfile
-    when (show dbOld /= show db) $ error "Database did not save properly"
+    -- this test is now mostly redundant because i can't get the file before saving
+    when (show db /= show db) $ error "Database did not save properly"
 
 
 testFile :: (CmdLine -> IO ()) -> FilePath -> IO Int
@@ -86,7 +88,7 @@ matchOutput want got = f want ([],got)
     where
         f [] _ = Nothing
         f (x:xs) a = case match (code x) a of
-            Nothing -> Just $ "Failed to match: " ++ x
+            Nothing -> Just $ unlines $ ["Failed to match","Expected: " ++ x,"Got:"] ++ fst a ++ snd a
             Just a -> f xs a
 
         code ('@':xs) = second (drop 1) $ break (== ' ') xs

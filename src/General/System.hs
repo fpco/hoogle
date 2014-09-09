@@ -33,6 +33,9 @@ isWindows = False
 #endif
 
 
+removeFile_ x = removeFile x `E.catch` \(_ :: E.SomeException) -> return ()
+
+
 withDirectory dir cmd = E.bracket
     (do x <- getCurrentDirectory; setCurrentDirectory dir; return x)
     setCurrentDirectory
@@ -53,7 +56,7 @@ captureOutput act = return Nothing
 #else
 captureOutput act = do
     tmp <- getTemporaryDirectory
-    (f,h) <- openTempFile tmp "hlint"
+    (f,h) <- openTempFile tmp "hoogle"
     sto <- hDuplicate stdout
     ste <- hDuplicate stderr
     hDuplicateTo h stdout

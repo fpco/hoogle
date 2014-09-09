@@ -1,48 +1,29 @@
-{-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
-module Test.General where
+module Test.General(parseTest, (===), randCheck) where
 
-
----------------------------------------------------------------------
--- The Test Monad
-
-data Test a = Test
-
-instance Monad Test where
-    a >> b = a `seq` b
-
-instance Show (Test a) where
-    show x = x `seq` "All tests passed"
-
-pass :: Test ()
-pass = Test
+import Control.Monad
+import qualified Data.ByteString as BS
+import Test.QuickCheck(Arbitrary(..), quickCheckWithResult, stdArgs, Testable, Result(..))
 
 
+instance Arbitrary BS.ByteString where
+    arbitrary = fmap BS.pack arbitrary
+
+
+parseTest :: (Show a, Show e, Eq a) => (String -> Either e a) -> String -> a -> IO ()
 parseTest f input output =
     case f input of
         Left x -> err "Parse failed" (show x)
-        Right x -> if x == output then pass else
-                   err "Parse not equal" (show x)
-    where
-        err pre post = error $ pre ++ ":\n  " ++ input ++ "\n  " ++ show output ++ "\n  " ++ post
-
-parseTest2 f input output =
-    case f input of
-        (x:xs,_) -> err "Parse failed" (show x)
-        ([],  x) -> if x == output then pass else
-                    err "Parse not equal" (show x)
+        Right x -> when (x /= output) $ err "Parse not equal" (show x)
     where
         err pre post = error $ pre ++ ":\n  " ++ input ++ "\n  " ++ show output ++ "\n  " ++ post
 
 
----------------------------------------------------------------------
--- The List Monad
+(===) :: (Show a, Eq a) => a -> a -> IO ()
+a === b = when (a /= b) $ error $ "Expected: " ++ show a ++ "\nGot: " ++ show b
 
-data List a b = List {fromList :: [a]}
-
-instance Monad (List a) where
-    List a >> List b = List (a++b)
-
-pair :: a -> b -> List (a,b) c
-pair a b = List [(a,b)]
-
+randCheck :: Testable a => a -> IO ()
+randCheck p = do
+    res <- quickCheckWithResult stdArgs p
+    let bad = case res of Failure{} -> True; GaveUp{} -> True; _ -> False
+    when bad $ error "QuickCheck failed"
